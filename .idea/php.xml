@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/vendor/composer" />
+      <path value="$PROJECT_DIR$/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/vendor/vanilla/garden-cli" />
+      <path value="$PROJECT_DIR$/vendor/dariuszp/cli-progress-bar" />
+      <path value="$PROJECT_DIR$/vendor/nikic/php-parser" />
+    </include_path>
+  </component>
   <component name="PhpInterpreters">
     <interpreters>
       <interpreter id="d3a432b7-708d-4c25-9ffa-d47a678658b0" name="Ubuntu-18.04" home="\\wsl$\Ubuntu-18.04/usr/bin/php" debugger_id="php.debugger.XDebug">
