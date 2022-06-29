@@ -1,0 +1,13 @@
+{
+    "require": {
+        "nikic/php-parser": "^4.14",
+        "vanilla/garden-cli": "^3.1",
+        "dariuszp/cli-progress-bar": "^1.0"
+    },
+    "autoload": {
+        "exclude-from-classmap": ["webapps"],
+        "classmap": [
+            "."
+        ]
+    }
+}

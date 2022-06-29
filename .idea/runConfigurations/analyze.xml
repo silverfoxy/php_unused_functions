@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="analyze" type="PhpLocalRunConfigurationType" factoryName="PHP Console" path="$PROJECT_DIR$/analyze.php" scriptParameters="-d &quot;./webapps/WordPress-4.6.22/&quot;">
+    <CommandLine>
+      <PhpTestInterpreterSettings>
+        <option name="interpreterName" value="php_xdebug:latest" />
+      </PhpTestInterpreterSettings>
+    </CommandLine>
+    <method v="2" />
+  </configuration>
+</component>
