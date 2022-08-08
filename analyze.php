@@ -44,11 +44,13 @@ function getDirs($dir, &$results = array()){
 // Parse CLI Args
 $cli = new Cli();
 $cli->description('Identify unused functions')
-    ->opt('dir:d', 'Target web application directory', true);
+    ->opt('dir:d', 'Target web application directory', true)
+    ->opt('cache:c', 'Reuse cache', false);
 $args = $cli->parse($argv, true);
 
 $dirname = $args->getOpt('dir');
 $files = getDirContents($dirname);
+$reuse_cache = $args->getOpt('cache');
 
 $progress_bar = new CliProgressBar(count($files));
 $progress_bar->setDetails('Starting the first analysis pass.');
@@ -57,7 +59,7 @@ $progress_bar->display();
 $mappings = [];
 
 $serialized_function_mappings_file_name = 'function_mappings.ser';
-if (file_exists($serialized_function_mappings_file_name)) {
+if (file_exists($serialized_function_mappings_file_name) && $reuse_cache) {
     $mappings = unserialize(file_get_contents($serialized_function_mappings_file_name), [FunctionVisitor::class, _Function::class, _Method::class]);
 }
 else {
@@ -99,7 +101,9 @@ else {
         $progress_bar->end();
     }
     // Serialize results
-    file_put_contents('function_mappings.ser', serialize($mappings));
+    if ($reuse_cache) {
+        file_put_contents('function_mappings.ser', serialize($mappings));
+    }
 }
 
 // Second pass for function call analysis
