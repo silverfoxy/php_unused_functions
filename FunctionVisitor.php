@@ -39,6 +39,22 @@ class FunctionVisitor extends NodeVisitorAbstract
         }
     }
 
+    public function leaveNode(Node $node)
+    {
+        if ($node instanceof Namespace_) {
+            $this->current_namespace = null;
+        }
+        elseif ($node instanceof Class_ || $node instanceof Node\Stmt\Interface_) {
+            $this->current_class = null;
+        }
+        if ($node instanceof Function_) {
+            $this->current_function = null;
+        }
+        elseif ($node instanceof ClassMethod) {
+            $this->current_function = null;
+        }
+    }
+
     public function enterNode(Node $node) {
         if ($node instanceof Namespace_) {
             // get namespace name and up date
@@ -60,13 +76,6 @@ class FunctionVisitor extends NodeVisitorAbstract
                 return;
             }
             $this->functions[$ns_function_name] = new _Function($name, $this->current_file, $node->getStartLine(), $node->getEndLine(), $params_count);
-            // // check for special functions
-            // if (in_array($name, ['add_action', 'add_filter', '_deprecated_function'])) {
-            //     $a = 1;
-            // }
-            // elseif (in_array($name, ['do_action', 'apply_filter'])) {
-            //     $a = 2;
-            // }
         }
         elseif ($node instanceof ClassMethod) {
             // extract name

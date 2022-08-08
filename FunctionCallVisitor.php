@@ -17,6 +17,7 @@ class FunctionCallVisitor extends NodeVisitorAbstract
     public string $current_file;
     public ?string $current_class = null;
     public ?string $current_namespace = null;
+    public ?string $current_function = null;
 
     public array $methods = [];
     public array $functions = [];
@@ -44,11 +45,47 @@ class FunctionCallVisitor extends NodeVisitorAbstract
 
     protected function resolveArg(Node\Arg $arg) {
         if (isset($arg->value) && $arg->value instanceof Node\Scalar) {
-            return $arg->value->value;
+            if ($arg->value instanceof Node\Scalar\MagicConst\Function_ || $arg->value instanceof Node\Scalar\MagicConst\Method) {
+                if (isset($this->current_function)) {
+                    return $this->current_function;
+                }
+            }
+            if ($arg->value instanceof \PhpParser\Node\Scalar\String_) {
+                return $arg->value->value;
+            }
+            else {
+                $a = 'now what?';
+                return 'DynamicType';
+            }
         }
-        else {
-            // Dynamic type
-            return 'DynamicType';
+        elseif (isset($arg->value) && $arg->value instanceof Node\Scalar\MagicConst\Function_) {
+            if (isset($this->current_function)) {
+                return $this->current_function;
+            }
+        }
+        elseif (isset($arg->value) && $arg->value instanceof Node\Expr\Array_) {
+            if ($arg->value->items[0]->value instanceof Node\Expr\Variable && $arg->value->items[0]->value->name === 'this') {
+                $name = $arg->value->items[1]->value->value;
+                return "{$this->current_namespace}\\{$this->current_class}::{$name}";
+            }
+        }
+        // Dynamic type
+        return 'DynamicType';
+    }
+
+    public function leaveNode(Node $node)
+    {
+        if ($node instanceof Namespace_) {
+            $this->current_namespace = null;
+        }
+        elseif ($node instanceof Class_ || $node instanceof Node\Stmt\Interface_) {
+            $this->current_class = null;
+        }
+        if ($node instanceof Function_) {
+            $this->current_function = null;
+        }
+        elseif ($node instanceof ClassMethod) {
+            $this->current_function = null;
         }
     }
 
@@ -60,6 +97,17 @@ class FunctionCallVisitor extends NodeVisitorAbstract
         elseif ($node instanceof Class_ || $node instanceof Node\Stmt\Interface_) {
             // get name of the class
             $this->current_class = $this->getName($node);
+        }
+        if ($node instanceof Function_) {
+            // extract name
+            $name = $this->getName($node);
+            $this->current_function = $name;
+        }
+        elseif ($node instanceof ClassMethod) {
+            // extract name
+            $name = $this->getName($node);
+            $ns_class_method_name = "{$this->current_namespace}\\{$this->current_class}::{$name}";
+            $this->current_function = $ns_class_method_name;
         }
         elseif ($node instanceof Node\Expr\FuncCall) {
             // extract name
@@ -83,12 +131,12 @@ class FunctionCallVisitor extends NodeVisitorAbstract
                         $this->filter_tags[$tag][] = $callback;
                         break;
                     case '_deprecated_function':
-                        $this->other_callbacks[] = $callback;
+                        $this->other_callbacks[] = $tag;
                         break;
                 }
 
             }
-            elseif (in_array($name, ['do_action', 'apply_filter'])) {
+            elseif (in_array($name, ['do_action', 'do_action_ref_array', 'apply_filter'])) {
                 $tag = $this->resolveArg($node->args[0]);
                 if ($tag === 'DynamicType' || is_null($tag)) {
                     // Dynamic tags are not supported
@@ -96,12 +144,13 @@ class FunctionCallVisitor extends NodeVisitorAbstract
                 }
                 switch ($name) {
                     case 'do_action':
-                        if (!in_array($this->invoked_actions, $tag)) {
+                    case 'do_action_ref_array':
+                        if (!in_array($tag, $this->invoked_actions)) {
                             $this->invoked_actions[] = $tag;
                         }
                         break;
                     case 'apply_filter':
-                        if (!in_array($this->invoked_filters, $tag)) {
+                        if (!in_array($tag, $this->invoked_filters)) {
                             $this->invoked_filters[] = $tag;
                         }
                         break;

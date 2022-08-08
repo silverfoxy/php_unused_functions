@@ -154,3 +154,83 @@ foreach ($files as $file_name) {
 }
 
 $a = $callbacks;
+
+$actions = [];
+$filters = [];
+$misc_callbacks = [];
+$invoked_actions = [];
+$invoked_filters = [];
+
+foreach($callbacks as $function_call_visitor) {
+    if (count($function_call_visitor->action_tags) > 0) {
+        // Get callbacks
+        foreach($function_call_visitor->action_tags as $tag => $values) {
+            foreach($function_call_visitor->action_tags[$tag] as $action_callback) {
+                if (!array_key_exists($tag, $actions) || !in_array($action_callback, $actions[$tag])) {
+                    $actions[$tag][] = $action_callback;
+                }
+            }
+        }
+    }
+    if (count($function_call_visitor->filter_tags) > 0) {
+        // Get callbacks
+        foreach($function_call_visitor->filter_tags as $tag => $values) {
+            foreach($function_call_visitor->filter_tags[$tag] as $filter_callback) {
+                if (!array_key_exists($tag, $filters) || !in_array($filter_callback, $filters[$tag])) {
+                    $filters[$tag][] = $filter_callback;
+                }
+            }
+        }
+    }
+    if (count($function_call_visitor->other_callbacks) > 0) {
+        // Get callbacks
+        foreach($function_call_visitor->other_callbacks as $misc_callback) {
+            if (!in_array($misc_callback, $misc_callbacks)) {
+                $misc_callbacks[] = $misc_callback;
+            }
+        }
+    }
+    // Check for invoked actions and filters
+    if (count($function_call_visitor->invoked_actions) > 0) {
+        foreach ($function_call_visitor->invoked_actions as $invoked_action) {
+            if (!in_array($invoked_action, $invoked_actions)) {
+                $invoked_actions[] = $invoked_action;
+            }
+        }
+    }
+    if (count($function_call_visitor->invoked_filters) > 0) {
+        foreach ($function_call_visitor->invoked_filters as $invoked_filter) {
+            if (!in_array($invoked_filter, $invoked_actions)) {
+                $invoked_filters[] = $invoked_filter;
+            }
+        }
+    }
+}
+
+$covered_functions = [];
+foreach ($invoked_actions as $invoked_action) {
+    $invoked_callbacks = $actions[$invoked_action];
+    if ($invoked_callbacks === null) {
+        continue;
+    }
+    foreach ($invoked_callbacks as $callback) {
+        if (!in_array($callback, $covered_functions)) {
+            $covered_functions[] = $callback;
+        }
+    }
+}
+foreach ($invoked_filters as $invoked_filter) {
+    $invoked_callbacks = $filters[$invoked_filter];
+    foreach ($invoked_callbacks as $callback) {
+        if (!in_array($callback, $covered_functions)) {
+            $covered_functions[] = $callback;
+        }
+    }
+}
+foreach ($misc_callbacks as $callback) {
+    if (!in_array($callback, $covered_functions)) {
+        $covered_functions[] = $callback;
+    }
+}
+
+$a = $covered_functions;
