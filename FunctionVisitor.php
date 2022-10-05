@@ -28,14 +28,22 @@ class FunctionVisitor extends NodeVisitorAbstract
     }
 
     protected function getName(Node $node) {
-        if (is_string($node->name)) {
+        if ($node instanceof Node\Name) {
+            return implode('\\', $node->parts);
+        }
+        if (isset($node->name) && is_string($node->name)) {
             return $node->name;
         }
         elseif (isset($node->parts)) {
             return implode('\\', $node->parts);
         }
         else {
-            return $this->getName($node->name);
+            if (!isset($node->name)) {
+                return "";
+            }
+            else {
+                return $this->getName($node->name);
+            }
         }
     }
 

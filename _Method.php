@@ -16,7 +16,7 @@ class _Method
     public int $end_line;
 
     public function __construct($class_name, $name, $file_name, $start_line, $end_line, $params_count, $namespace = '') {
-        $this->class_name = $class_name;
+        $this->class_name = $class_name ?? "anonymous";
         $this->name = $name;
         $this->params_count = $params_count;
         $this->file_name = $file_name;

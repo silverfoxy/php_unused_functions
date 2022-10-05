@@ -45,12 +45,14 @@ function getDirs($dir, &$results = array()){
 $cli = new Cli();
 $cli->description('Identify unused functions')
     ->opt('dir:d', 'Target web application directory', true)
-    ->opt('cache:c', 'Reuse cache', false);
+    ->opt('cache:c', 'Reuse cache', false)
+    ->opt('mapping_dump:m', 'Dump the function file and line mappings into csv file', false);
 $args = $cli->parse($argv, true);
 
 $dirname = $args->getOpt('dir');
 $files = getDirContents($dirname);
 $reuse_cache = $args->getOpt('cache');
+$mapping_dump = $args->getOpt('mapping_dump');
 
 $progress_bar = new CliProgressBar(count($files));
 $progress_bar->setDetails('Starting the first analysis pass.');
@@ -106,6 +108,20 @@ else {
     }
 }
 
+if ($mapping_dump) {
+    $file = fopen($mapping_dump, 'w');
+    foreach($mappings as $file_name => $file_entry) {
+        foreach ($file_entry->methods as $method) {
+            fputcsv($file, [str_replace(realpath($dirname), '', $method->file_name), $method->start_line, $method->end_line]);
+        }
+        foreach ($file_entry->functions as $function) {
+            fputcsv($file, [str_replace(realpath($dirname), '', $function->file_name), $function->start_line, $function->end_line]);
+        }
+    }
+    fclose($file);
+    die("Done writing to {$mapping_dump}.");
+}
+
 // Second pass for function call analysis
 $progress_bar->setProgressTo(0);
 $progress_bar->setDetails('Starting the second analysis pass.');
@@ -122,11 +138,11 @@ foreach ($files as $file_name) {
         $traverser = new NodeTraverser();
         $function_call_visitor = new FunctionCallVisitor($file_name);
         $traverser->addVisitor($function_call_visitor);
-        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
         try {
+            $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
             $ast = $parser->parse($php_file_content);
         }
-        catch(\Error $error) {
+        catch(\PhpParser\Error $error) {
             echo "Parse error at ({$file_name}): {$error->getMessage()}" . PHP_EOL;
             continue;
         }
